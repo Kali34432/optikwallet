@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { RefreshCw, Eye, EyeOff } from 'lucide-react';
-import { useWallet } from '../hooks/useWallet.ts';
+import { RefreshCw, Eye, EyeOff, TrendingUp } from 'lucide-react';
+import { useWallet } from './hooks/useWallet';
 
 export function BalanceCard() {
-  const { currentWallet, refreshBalance } = useWallet();
+  const { state, refreshBalance } = useWallet();             // ✅ safe structure
+  const currentWallet = state.currentWallet;
+
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
     if (!currentWallet) return;
+
     setIsRefreshing(true);
     try {
       await refreshBalance(currentWallet.address);
@@ -18,39 +21,44 @@ export function BalanceCard() {
   };
 
   const balance = currentWallet?.balance || 0;
-  const balanceUSD = (balance * 180).toFixed(2); // Mock price
+  const balanceUSD = (balance * 180).toFixed(2); // mock rate
 
   return (
     <div style={styles.card}>
-      <h2 style={styles.heading}>Wallet Balance</h2>
+      <div style={styles.header}>
+        <div style={styles.headerLeft}>
+          <div style={styles.iconWrap}>
+            <TrendingUp size={20} color="white" />
+          </div>
+          <h3 style={styles.title}>Wallet Balance</h3>
+        </div>
 
-      <div style={styles.balance}>
-        {isBalanceVisible ? `${balance.toFixed(4)} SOL` : '•••••• SOL'}
+        <div style={styles.actions}>
+          <button onClick={() => setIsBalanceVisible(!isBalanceVisible)} style={styles.actionBtn}>
+            {isBalanceVisible ? <EyeOff size={16} color="#d1d5db" /> : <Eye size={16} color="#d1d5db" />}
+          </button>
+          <button onClick={handleRefresh} style={styles.actionBtn} disabled={isRefreshing}>
+            <RefreshCw
+              size={16}
+              color="#d1d5db"
+              className={isRefreshing ? 'animate-spin' : ''}
+            />
+          </button>
+        </div>
       </div>
 
-      <div style={styles.usd}>
-        ≈ {isBalanceVisible ? `$${balanceUSD}` : '••••••'} USD
+      <div style={styles.balanceText}>
+        <div style={{ fontSize: '2.5rem', fontWeight: 'bold' }}>
+          {isBalanceVisible ? `${balance.toFixed(4)} SOL` : '•••••• SOL'}
+        </div>
+        <div style={{ color: '#9ca3af', marginTop: '6px' }}>
+          ≈ {isBalanceVisible ? `$${balanceUSD}` : '••••••'} USD
+        </div>
       </div>
 
-      <div style={styles.buttons}>
-        <button className="cta-button" onClick={() => setIsBalanceVisible(!isBalanceVisible)}>
-          {isBalanceVisible ? <EyeOff size={18} /> : <Eye size={18} />}
-          &nbsp;Show/Hide
-        </button>
-        <button className="cta-button" onClick={handleRefresh} disabled={isRefreshing}>
-          {isRefreshing ? (
-            <span className="animate-spin">
-              <RefreshCw size={18} />
-            </span>
-          ) : (
-            <RefreshCw size={18} />
-          )}
-          &nbsp;Refresh
-        </button>
-      </div>
-
-      <div style={styles.change}>
-        +2.4% (24h Change)
+      <div style={styles.footer}>
+        <span style={{ color: '#9ca3af' }}>24h Change</span>
+        <span style={{ color: '#10b981', fontWeight: 500 }}>+2.4%</span>
       </div>
     </div>
   );
@@ -60,37 +68,52 @@ const styles = {
   card: {
     background: 'rgba(0, 0, 0, 0.7)',
     borderRadius: '12px',
-    padding: '32px',
+    padding: '24px',
     boxShadow: '0 0 20px rgba(59,130,246,0.4)',
     color: 'white',
     maxWidth: '500px',
     margin: '40px auto',
     fontFamily: `'Segoe UI', sans-serif`,
-    textAlign: 'center',
+    textAlign: 'center' as const,
   },
-  heading: {
-    fontSize: '1.8rem',
-    marginBottom: '1rem',
-  },
-  balance: {
-    fontSize: '2.8rem',
-    fontWeight: 'bold',
-    marginBottom: '0.5rem',
-  },
-  usd: {
-    fontSize: '1.1rem',
-    color: '#d1d5db',
-    marginBottom: '1.5rem',
-  },
-  buttons: {
+  header: {
     display: 'flex',
-    justifyContent: 'center',
-    gap: '16px',
-    marginBottom: '1rem',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '16px',
   },
-  change: {
-    fontSize: '0.9rem',
-    color: '#10b981',
-    marginTop: '1rem',
+  headerLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
   },
+  iconWrap: {
+    background: 'linear-gradient(to right, #06b6d4, #3b82f6)',
+    padding: '10px',
+    borderRadius: '8px'
+  },
+  title: {
+    fontSize: '1.2rem',
+    fontWeight: 'bold'
+  },
+  actions: {
+    display: 'flex',
+    gap: '10px'
+  },
+  actionBtn: {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer'
+  },
+  balanceText: {
+    marginTop: '10px',
+    marginBottom: '20px'
+  },
+  footer: {
+    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+    paddingTop: '12px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    fontSize: '0.9rem'
+  }
 };
